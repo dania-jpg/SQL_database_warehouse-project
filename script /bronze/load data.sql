@@ -37,7 +37,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.crm_cust_info';
         BULK INSERT bronze.crm_cust_info
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\cust_info.csv'
+        FROM 'C:\path_to_file\datasets\source_crm\cust_info.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -54,7 +54,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.crm_prd_info';
         BULK INSERT bronze.crm_prd_info
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\prd_info.csv'
+        FROM 'C:\path_to_file\datasets\source_crm\prd_info.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -71,7 +71,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.crm_sales_details';
         BULK INSERT bronze.crm_sales_details
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_crm\sales_details.csv'
+        FROM 'C:\path_to_file\datasets\source_crm\sales_details.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -91,7 +91,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.erp_CUST_AZ12';
         BULK INSERT bronze.erp_CUST_AZ12
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\CUST_AZ12.csv'
+        FROM 'C:\path_to_file\datasets\source_erp\CUST_AZ12.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -108,7 +108,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.erp_LOC_A101';
         BULK INSERT bronze.erp_LOC_A101
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\LOC_A101.csv'
+        FROM 'C:\path_to_file\datasets\source_erp\LOC_A101.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -125,7 +125,7 @@ BEGIN
 
         PRINT 'Loading table: bronze.erp_PX_CAT_G1V2';
         BULK INSERT bronze.erp_PX_CAT_G1V2
-        FROM 'C:\Users\Dania\Documents\trining\SQL\sql-data-warehouse-project-main\sql-data-warehouse-project-main\datasets\source_erp\PX_CAT_G1V2.csv'
+        FROM 'C:\path_to_file\datasets\source_erp\PX_CAT_G1V2.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
