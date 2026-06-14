@@ -1,0 +1,153 @@
+/*
+===============================================================================
+Data Quality & Profiling Framework
+===============================================================================
+Purpose:
+    This script provides standardized, reusable template queries used to audit, 
+    profile, and identify data anomalies in the raw (Bronze) layer before 
+    developing ETL transformations for the Silver layer.
+
+Data Quality Dimensions Covered:
+    1. Uniqueness & Completeness (Primary Key Integrity)
+    2. Text Conformity (Unwanted Spaces)
+    3. Categorical Consistency (Domain Range Checks)
+    4. Range & Domain Validity (Invalid/Negative Values)
+    5. Chronological & Business Rule Integrity (Logical Inconsistencies)
+    6. Referential Integrity (Cross-Table Key Alignments)
+===============================================================================
+*/
+
+-- ============================================================================
+-- TEST 1: Uniqueness & Completeness (Primary Key Integrity)
+-- ============================================================================
+/*
+  Purpose: 
+    Identifies if a primary key column contains duplicate records or missing 
+    (NULL) values. Any rows returned by this query indicate a violation of 
+    entity integrity rules that must be resolved (e.g., via window functions).
+*/
+-- Generic Template:
+SELECT 
+    <primary_key_column>,
+    COUNT(*) AS duplicate_count
+FROM <schema_name>.<table_name>
+GROUP BY <primary_key_column>
+HAVING COUNT(*) > 1 OR <primary_key_column> IS NULL;
+
+-- Concrete Examples from Testing:
+-- Check CRM Customers: SELECT cst_id, COUNT(*) FROM bronze.crm_cust_info GROUP BY cst_id HAVING COUNT(*) > 1 OR cst_id IS NULL;
+-- Check ERP Customers: SELECT CID, COUNT(*) FROM bronze.erp_CUST_AZ12 GROUP BY CID HAVING COUNT(*) > 1 OR CID IS NULL;
+
+
+-- ============================================================================
+-- TEST 2: Text Conformity (Unwanted Spaces)
+-- ============================================================================
+/*
+  Purpose:
+    Detects leading, trailing, or irregular spacing issues within text fields.
+    If a record does not equal its TRIMmed counterpart, it means there are 
+    hidden padding spaces that will break string comparisons and JOINs.
+*/
+-- Generic Template:
+SELECT
+    <string_column> AS padded_value
+FROM <schema_name>.<table_name>
+WHERE <string_column> != TRIM(<string_column>);
+
+-- Concrete Examples from Testing:
+-- Check Firstnames: SELECT cst_firstname FROM bronze.crm_cust_info WHERE cst_firstname != TRIM(cst_firstname);
+-- Check Product Names: SELECT prd_nm FROM bronze.crm_prd_info WHERE prd_nm != TRIM(prd_nm);
+
+
+-- ============================================================================
+-- TEST 3: Categorical Consistency (Domain Range Checks)
+-- ============================================================================
+/*
+  Purpose:
+    Profiles low-cardinality categorical attributes to look for misspellings,
+    varying abbreviations, or case-sensitivity variants (e.g., 'M', 'Male', 'm').
+*/
+-- Generic Template:
+SELECT DISTINCT
+    <categorical_column> AS unique_category
+FROM <schema_name>.<table_name>;
+
+-- Concrete Examples from Testing:
+-- Check Gender: SELECT DISTINCT cst_gndr FROM bronze.crm_cust_info;
+-- Check ERP Gender: SELECT DISTINCT gen FROM bronze.erp_CUST_AZ12;
+
+
+-- ============================================================================
+-- TEST 4: Range & Domain Validity (Invalid / Negative Values / Formatting)
+-- ============================================================================
+/*
+  Purpose:
+    Ensures numeric metrics conform to expected real-world limits (e.g., asset 
+    costs or transaction sales quantities should rarely be negative or zero).
+    Also checks if code/date strings match expected exact lengths.
+*/
+-- Generic Template (Numeric Bounds):
+SELECT *
+FROM <schema_name>.<table_name>
+WHERE <numeric_column> <= 0 OR <numeric_column> IS NULL;
+
+-- Generic Template (String Length / Format Bounds):
+SELECT *
+FROM <schema_name>.<table_name>
+WHERE LEN(<string_column>) != <expected_length>;
+
+-- Concrete Examples from Testing:
+-- Check Product Cost: SELECT prd_cost FROM bronze.crm_prd_info WHERE prd_cost < 0 OR prd_cost IS NULL;
+-- Check Sales Amount: SELECT * FROM bronze.crm_sales_details WHERE sls_sales <= 0;
+-- Check Int Date Format Length: SELECT * FROM bronze.crm_sales_details WHERE sls_due_dt <= 0 OR LEN(sls_due_dt) != 8;
+
+
+-- ============================================================================
+-- TEST 5: Chronological & Business Rule Integrity (Logical Inconsistencies)
+-- ============================================================================
+/*
+  Purpose:
+    Validates transactional dependencies and math relationships that must hold 
+    true based on established business processes. Examples include ensuring sequence 
+    dates flow forward chronologically and calculated totals match individual lines.
+*/
+-- Generic Template (Date Sequence Check):
+SELECT *
+FROM <schema_name>.<table_name>
+WHERE <end_or_successor_date> < <start_or_predecessor_date>;
+
+-- Generic Template (Math Balance Verification):
+SELECT 
+    <revenue_column>,
+    <qty_column> * <price_column> AS calculated_revenue
+FROM <schema_name>.<table_name>
+WHERE <revenue_column> != (<qty_column> * <price_column>)
+   OR <revenue_column> IS NULL;
+
+-- Concrete Examples from Testing:
+-- Check Overlapping Dates: SELECT * FROM bronze.crm_prd_info WHERE prd_end_dt < prd_start_dt;
+-- Check Improbable Future Dates: SELECT * FROM bronze.erp_CUST_AZ12 WHERE bdate > GETDATE() OR bdate < '1924-01-01';
+-- Check Line Level Sales Math: SELECT * FROM bronze.crm_sales_details WHERE sls_sales != (sls_quantity * sls_price);
+
+
+-- ============================================================================
+-- TEST 6: Referential Integrity (Cross-Table Key Alignments)
+-- ============================================================================
+/*
+  Purpose:
+    Validates orphan records by checking whether business keys in transactional 
+    fact tables actually exist inside dimensional master tables. This uncovers 
+    discrepancies in system codes or missing reference entities.
+*/
+-- Generic Template:
+SELECT DISTINCT 
+    fact.<foreign_key_column>
+FROM <schema_name>.<fact_table> fact
+WHERE fact.<foreign_key_column> NOT IN (
+    SELECT dim.<master_key_column> 
+    FROM <schema_name>.<dimension_table> dim
+);
+
+-- Concrete Examples from Testing:
+-- Check Orphan Product Keys (incorporating key cleaning logic formatting):
+-- SELECT sls_prd_key FROM bronze.crm_sales_details WHERE REPLACE(sls_prd_key,'-','_') NOT IN (SELECT prd_key FROM silver.crm_prd_info);
